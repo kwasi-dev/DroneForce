@@ -10,6 +10,7 @@ import java.text.DecimalFormat;
 
 /**
  * Created by kwasi on 3/7/2016.
+ * Hello
  */
 public class sensorClass implements SensorEventListener{
     SensorManager sm;  //Sensor manager
@@ -101,7 +102,7 @@ public class sensorClass implements SensorEventListener{
                 readings[2][a]=Math.abs(readings[2][a])<ACTION_THRESHOLD?0.0f:readings[2][a]*100;
                 currMvmnt=getCurrentMovement(event.values);
             }
-            if (Math.abs(readings[2][0])>0.3)
+            if (Math.abs(readings[2][0])>ACTION_THRESHOLD||Math.abs(readings[2][1])>ACTION_THRESHOLD||Math.abs(readings[2][2])>ACTION_THRESHOLD)
                 System.out.println("\n"+readings[2][0]+"\t"+readings[2][1]+"\t"+readings[2][2]);
         }
         System.arraycopy(event.values,0,readings[row],0,3);

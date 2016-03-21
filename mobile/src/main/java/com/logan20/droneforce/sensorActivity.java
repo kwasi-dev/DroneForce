@@ -21,6 +21,17 @@ public class sensorActivity extends AppCompatActivity {
         updateTextThread();
     }
 
+    @Override
+    protected void onPause(){
+        sensor.unregisterListeners();
+        super.onPause();
+    }
+    @Override
+    protected void onResume(){
+        super.onResume();
+        sensor.registerListeners();
+    }
+
     private void init() {
         sensor = new sensorClass((SensorManager)this.getSystemService(Context.SENSOR_SERVICE));
         accelTxt = (TextView)findViewById(R.id.idAccelTxt);
