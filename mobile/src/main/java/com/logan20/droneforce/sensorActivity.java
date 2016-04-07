@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 
 import com.logan20.droneforceshared.sensorClass;
@@ -70,5 +71,11 @@ public class sensorActivity extends AppCompatActivity {
                     currActionTxt.setText(sensor.getActionString());
             }
         });
+    }
+
+    public void zeroAxis(View v){
+        sensor.zeroAxis(0);
+        sensor.zeroAxis(1);
+        sensor.zeroAxis(2);
     }
 }
