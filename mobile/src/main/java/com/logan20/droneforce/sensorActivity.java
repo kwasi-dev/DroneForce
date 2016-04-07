@@ -12,7 +12,7 @@ import com.logan20.droneforceshared.sensorClass;
 public class sensorActivity extends AppCompatActivity {
     sensorClass sensor;
     TextView accelTxt, gyroTxt, linAccelTxt, currActionTxt;
-    final long REFRESH_TIME = 50;
+    private final long REFRESH_TIME = 50;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,13 +62,10 @@ public class sensorActivity extends AppCompatActivity {
             public void run() {
                 double[] acc = sensor.getCurrentSensorReading("accelerometer");
                 double[] gyro = sensor.getCurrentSensorReading("gyroscope");
-                double[] lin = sensor.getCurrentSensorReading("linear acceleration");
 
                 accelTxt.setText("X:" + acc[0] + " Y:" + acc[1] + " Z:" + acc[2]);
                 gyroTxt.setText("X:" + gyro[0] + " Y:" + gyro[1] + " Z:" + gyro[2]);
-                linAccelTxt.setText("X:" + lin[0] + " Y:" + lin[1] + " Z:" + lin[2]);
-                if (lin[0] != 0.0f && lin[1] != 0.0f && lin[2] != 0.0f)
-                    currActionTxt.setText(sensor.getActionString());
+
             }
         });
     }

@@ -15,16 +15,14 @@ import java.text.DecimalFormat;
 public class sensorClass implements SensorEventListener{
     SensorManager sm;  //Sensor manager
     Sensor sGyro, sAccel; //Gyroscope and Accelerometer sensors
-    float[][] readings; //0th row is accelerometer
-                        //1st row is gyroscope
-                        //2th row is peak accelerometer
-                        //3th row is min accelerometer
+    float[][] readings; //0th row is accelerometer's current reading
+                        //1st row is gyroscope's current reading
+                        //2th row is peak accelerometer reading
+                        //3th row is min accelerometer reading
                         //4th row is peak accelerometer time
                         //5th row is min accelerometer time
                         //6th row is vector quantity in each axis
-    String[] headings;
-    String[] orientations;
-    String[] movements;
+
     private final float ACCEL_DELTA = 1.0f;
     private final float ACCEL_ZERO_POINT = 0.5f;
     private final float GYRO_DELTA = 0.1f;
@@ -34,46 +32,38 @@ public class sensorClass implements SensorEventListener{
     private void setSensorManager(SensorManager x){
         sm = x;
     }
+
     private void initArr(){
-        readings = new float[8][3]; //initialise the readings matrix
-        headings = new String[]{"Accelerometer","Gyroscope","Lin Accel","Gravity"};
-        orientations = new String[]{"Normal Landscape", "Reverse Landscape",
-                                    "Normal Portrait", "Reverse Portrait",
-                                    "Screen Facing Up", "Screen Facing Down"};
-        movements = new String[]{   "Moving Left","Moving Right","Moving Away From Body",
-                                    "Moving Towards Body", "Raised into the air",
-                                    "Dropping towards the floor"};
+        readings = new float[7][3]; //initialise the readings matrix
     }
     public sensorClass(SensorManager x){
         setSensorManager(x);//set the sensor manager to the manager passed in from the main class
         initArr();//initialise the arrays that hold data
         setSensors(); //sets the sensors
         registerListeners(); //register the sensors
-
     }
 
     public void registerListeners(){
-        sm.registerListener(this, sGyro, SensorManager.SENSOR_DELAY_FASTEST);
-        sm.registerListener(this, sAccel, SensorManager.SENSOR_DELAY_FASTEST);
+        sm.registerListener(this, sGyro, SensorManager.SENSOR_DELAY_FASTEST); //registers the listeners for the gyroscope
+        sm.registerListener(this, sAccel, SensorManager.SENSOR_DELAY_FASTEST);//register the listeners for the accelerometer
     }
-    public double[] getCurrentSensorReading(String sensor){
-        int row=0; //row of the array being accessed
-        double[] arr=new double[3];
+    public double[] getCurrentSensorReading(String sensor){//gets reading of a particular sensor
+        int row=0; //row of the array being accessed (defaulted to accelerometer)
+        if (sensor.toLowerCase().equals("gyroscope"))  row=1; //(if gyroscope reading is the one requested, shift the row
 
-        if (sensor.toLowerCase().equals("gyroscope"))  row=1;
-        else if (sensor.toLowerCase().equals("linear acceleration"))  row=2;
+        double[] arr=new double[3]; //new array to hold all data(formatted to 2dp)
         for (int a=0;a<3;a++){
             arr[a]=Double.valueOf(new DecimalFormat("#.##").format(readings[row][a]));
         }
         return arr;
     }
 
-    public void unregisterListeners(){
+    public void unregisterListeners(){ //unregister listeners to save battery when sensors not in use
         sm.unregisterListener(this, sGyro);
         sm.unregisterListener(this, sAccel);
     }
 
-    private void setSensors(){
+    private void setSensors(){//sets the sensors
         sGyro = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         sAccel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
@@ -82,10 +72,9 @@ public class sensorClass implements SensorEventListener{
     public void onSensorChanged(SensorEvent event) {
         updateSensors(event);
         resetPeakMin();
-        //updateMotionDetector();
     }
 
-    private void resetPeakMin() {
+    private void resetPeakMin() {//needed to reset the values of each axis so that new readings can be obtained, values cannot be defaulted to 0
         for (int a=0;a<3;a++){
             if (readings[2][a]==0.0f) readings[2][a]=readings[0][a];
             if (readings[3][a]==0.0f) readings[3][a]=readings[0][a];
@@ -94,49 +83,46 @@ public class sensorClass implements SensorEventListener{
 
 
     private void updateSensors(SensorEvent event){
-        if (event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){
-            boolean t=false;
-            for (int a=0;a<3;a++){
-                if (Math.abs(Math.abs(readings[0][a])-Math.abs(event.values[a]))>ACCEL_DELTA){
-                    readings[0][a]=Math.abs(event.values[a])<ACCEL_ZERO_POINT?0.00f:event.values[a];
-                    if (event.values[a]>readings[2][a]){
-                        readings[2][a]=event.values[a];
-                        readings[4][a]=Math.abs(System.currentTimeMillis())%10000000;
+        boolean t=false;//variable to see if any peak / min values was updated
+
+        if (event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){//for the accelerometer
+            for (int a=0;a<3;a++){//for each of the x, y and z axis
+                if (Math.abs(Math.abs(readings[0][a])-Math.abs(event.values[a]))>ACCEL_DELTA){//once the change in the readings is significant
+                    readings[0][a]=Math.abs(event.values[a])<ACCEL_ZERO_POINT?0.00f:event.values[a];//set the value appropriately, (0 if the reading is approximately 0 else current sensor value
+                    if (event.values[a]>readings[2][a]){//if the new value is greater than the peak
+                        readings[2][a]=event.values[a]; //update the peak accelerometer reading
+                        readings[4][a]=Math.abs(System.currentTimeMillis())%10000000;//update the time that the reading was taken
                     }
-                    if (event.values[a]<readings[3][a]){
-                        readings[3][a]=event.values[a];
-                        readings[5][a]=Math.abs(System.currentTimeMillis())%10000000;
+                    if (event.values[a]<readings[3][a]){//if the new value is smaller than the min
+                        readings[3][a]=event.values[a];//update the min accelerometer reading
+                        readings[5][a]=Math.abs(System.currentTimeMillis())%10000000;//update the time that the reading was taken
                     }
-                    t=true;
+                    t=true;//set the flag that an update of peak / min was done
                 }
             }
-            if (t){
-                for (int a='x';a<='z';a++){
-                    //check and see if the movement's significant enough
-                    if (readings[2][a-'x']-readings[3][a-'x']>MIN_MOTION_DELTA){
-                        //get speed
-                        readings[6][a-'x']=readings[2][a-'x']-readings[3][a-'x'];
+            if (t){//once an update of peak / min was done
+                for (int a='x';a<='z';a++){//for each of the x,y and z axis
+                    if (readings[2][a-'x']-readings[3][a-'x']>MIN_MOTION_DELTA){//once the movement's significant enough
+                        readings[6][a-'x']=readings[2][a-'x']-readings[3][a-'x'];//set speed
+                        readings[6][a-'x']=readings[4][a-'x']<readings[5][a-'x']?readings[6][a-'x']:-readings[6][a-'x'];//set direction
 
-                        //get direction
-                        readings[6][a-'x']=readings[4][a-'x']<readings[5][a-'x']?readings[6][a-'x']:-readings[6][a-'x'];
-
-                        Log.i(Character.valueOf((char)a)+" MAX: "," "+readings[2][a-'x']+"\t at time: "+String.format("%.0f",readings[4][a-'x']));
-                        Log.i(Character.valueOf((char)a)+" MIN: "," "+readings[3][a-'x']+"\t at time: "+String.format("%.0f",readings[5][a - 'x']));
-                        Log.i(Character.valueOf((char)a)+" SPEED",String.format("%.2f",readings[6][a-'x']));
+                        Log.d(String.valueOf((char)a).toUpperCase()+" axis","Speed: "+readings[6][a-'x']);
                     }
                 }
             }
         }
-        else if (event.sensor.getType()==Sensor.TYPE_GYROSCOPE){
-            boolean t=false;
-            for (int a=0;a<3;a++){
-                if (Math.abs(Math.abs(readings[1][a])-Math.abs(event.values[a]))>GYRO_DELTA){
-                    readings[1][a]=Math.abs(event.values[a])<GYRO_ZERO_POINT?0.00f:event.values[a];
-                    t=true;
+        else if (event.sensor.getType()==Sensor.TYPE_GYROSCOPE){//for the gyroscope
+            for (int a=0;a<3;a++){//for each of the axis
+                if (Math.abs(Math.abs(readings[1][a])-Math.abs(event.values[a]))>GYRO_DELTA){//once the movement is significant enough
+                    readings[1][a]=Math.abs(event.values[a])<GYRO_ZERO_POINT?0.00f:event.values[a];//update readings
+                    t=true;//set the flag
                 }
             }
-            if (t){
-                Log.d("GYROSCOPE",String.format("%.3f\t%.3f\t%.3f\t%d",readings[1][0],readings[1][1],readings[1][2],System.currentTimeMillis()%10000));
+            if (t){//once the flag has been triggered
+                //need to finish code out gyroscope section...
+                //accelerometer is used to give direction
+                //rotational information from gyroscope will be used for when the user shakes his hand, that will stop all movement of the drone
+                //
             }
         }
     }
@@ -146,24 +132,9 @@ public class sensorClass implements SensorEventListener{
 
     }
 
-    public int getOrientation(){
-        //0= normal landscape, 1=reverse landscape
-        //2=normal portrait, 3=reverse portrait
-        //4 = screen faces up, 5 = screen faces down
-        if (Math.abs(readings[0][0])>Math.abs(readings[0][1])&&Math.abs(readings[0][0])>Math.abs(readings[0][2]))
-            return readings[0][0]>0?0:1;
-        else if (Math.abs(readings[0][1])>Math.abs(readings[0][0])&&Math.abs(readings[0][1])>Math.abs(readings[0][2]))
-            return readings[0][1]>0?2:3;
-        return readings[0][2]>0?4:5;
-    }
-    public String getActionString(){
-        return "";
-    }
-
     public void zeroAxis(int i) {
-        //reset delta and times
         for (int a=2;a<7;a++){
-            readings[a][i]=0.0f;
+            readings[a][i]=0.0f;//reset the peak, min, peaktime, mintime, and speed of the ith axis
         }
     }
 }
