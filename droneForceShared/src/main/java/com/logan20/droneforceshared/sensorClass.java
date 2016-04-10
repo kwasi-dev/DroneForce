@@ -21,13 +21,16 @@ public class sensorClass implements SensorEventListener{
                         //3th row is min accelerometer reading
                         //4th row is peak accelerometer time
                         //5th row is min accelerometer time
-                        //6th row is vector quantity in each axis
+                        //6th row is velocity (vector quantity) in each axis
 
-    private final float ACCEL_DELTA = 1.0f;
-    private final float ACCEL_ZERO_POINT = 0.5f;
-    private final float GYRO_DELTA = 0.1f;
-    private final float GYRO_ZERO_POINT = 0.05f;
-    private final float MIN_MOTION_DELTA=8.0f;
+    private final float ACCEL_DELTA = 1.0f;//minimum change needed before changing of values on accelerometer
+    private final float ACCEL_ZERO_POINT = 0.5f;//noise level eliminator for accelerometer
+    private final float GYRO_DELTA = 0.1f; //minimum change needed before changing of values on gyroscope
+    private final float GYRO_ZERO_POINT = 0.05f; //noise level eliminator for gyroscope
+    private final float MIN_MOTION_DELTA=8.0f;//minimum distance between peaks and trough in order to record an axis' speed
+    private final long MIN_MOTION_TIME = 200; //minimum length of time user must move on a particular axis before reading is recorded
+    private final float STRONG_MOVEMENT = 20.0f;
+
 
     private void setSensorManager(SensorManager x){
         sm = x;
@@ -36,6 +39,7 @@ public class sensorClass implements SensorEventListener{
     private void initArr(){
         readings = new float[7][3]; //initialise the readings matrix
     }
+
     public sensorClass(SensorManager x){
         setSensorManager(x);//set the sensor manager to the manager passed in from the main class
         initArr();//initialise the arrays that hold data
@@ -102,11 +106,14 @@ public class sensorClass implements SensorEventListener{
             }
             if (t){//once an update of peak / min was done
                 for (int a='x';a<='z';a++){//for each of the x,y and z axis
-                    if (readings[2][a-'x']-readings[3][a-'x']>MIN_MOTION_DELTA){//once the movement's significant enough
-                        readings[6][a-'x']=readings[2][a-'x']-readings[3][a-'x'];//set speed
-                        readings[6][a-'x']=readings[4][a-'x']<readings[5][a-'x']?readings[6][a-'x']:-readings[6][a-'x'];//set direction
+                    float motionMagnitude =readings[2][a-'x']-readings[3][a-'x'];
+                    if (motionMagnitude>MIN_MOTION_DELTA){//once the movement's significant enough
+                        if (Math.abs(Math.abs(readings[4][a-'x'])-Math.abs(readings[5][a-'x']))>MIN_MOTION_TIME || motionMagnitude>STRONG_MOVEMENT){//once the time difference is significant enough or movement is a strong movement
+                            readings[6][a-'x']=readings[2][a-'x']-readings[3][a-'x'];//set speed
+                            readings[6][a-'x']=readings[4][a-'x']<readings[5][a-'x']?readings[6][a-'x']:-readings[6][a-'x'];//set direction
+                            Log.d(String.valueOf((char)a).toUpperCase()+" axis","Speed: "+readings[6][a-'x']);
+                        }
 
-                        Log.d(String.valueOf((char)a).toUpperCase()+" axis","Speed: "+readings[6][a-'x']);
                     }
                 }
             }

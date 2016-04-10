@@ -51,5 +51,5 @@ public class mobileMain extends AppCompatActivity {
         startActivity(new Intent(this, sensorActivity.class));
     }
 
-    public void handleDrone(View v){ startActivity(new Intent(this, droneMasterActivity.class));}
+    public void handleDrone(View v){ startActivity(new Intent(this, droneActivity.class));}
 }
