@@ -12,23 +12,22 @@
     tools:context="com.logan20.droneforce.mobileMain"
     tools:showIn="@layout/activity_mobile_main">
 
-    <Button
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Show Sensor Readings"
-        android:id="@+id/btnShowSensor"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="PROJECT: DroneForce"
+        android:id="@+id/tvMobileHeading"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="99dp"
-        android:onClick="showSensor" />
+        android:layout_centerHorizontal="true" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Drone"
-        android:id="@+id/btnDrone"
-        android:layout_centerVertical="true"
+        android:text="Rescan For Drones"
+        android:id="@+id/btnRescan"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:onClick="handleDrone"/>
-
+        android:layout_marginBottom="100dp"
+        android:onClick="rescanDrones" />
 </RelativeLayout>

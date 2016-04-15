@@ -1,29 +1,14 @@
 package com.logan20.droneforce;
 
-import android.app.ListActivity;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.database.DataSetObserver;
-import android.provider.Settings;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
-
-import com.logan20.droneforceshared.DroneHandler;
-
-import java.util.List;
 
 public class droneActivity extends AppCompatActivity {
     private final long WAIT_PERIOD = 10000;
-    private DroneHandler droneHandler;
     protected CharSequence[] droneList;
 
     @Override
@@ -31,10 +16,10 @@ public class droneActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drone);
 
-        init();
-        updateDroneList();
+        //init();
+        //updateDroneList();
     }
-
+/*
     private void init() {
         droneHandler = new DroneHandler(this);
     }
@@ -89,5 +74,5 @@ public class droneActivity extends AppCompatActivity {
                 }
             }
         }).start();
-    }
+    }*/
 }

@@ -22,7 +22,6 @@ public class sensorClass implements SensorEventListener{
                         //4th row is peak accelerometer time
                         //5th row is min accelerometer time
                         //6th row is velocity (vector quantity) in each axis
-
     private final float ACCEL_DELTA = 1.0f;//minimum change needed before changing of values on accelerometer
     private final float ACCEL_ZERO_POINT = 0.5f;//noise level eliminator for accelerometer
     private final float GYRO_DELTA = 0.1f; //minimum change needed before changing of values on gyroscope
@@ -111,7 +110,7 @@ public class sensorClass implements SensorEventListener{
                         if (Math.abs(Math.abs(readings[4][a-'x'])-Math.abs(readings[5][a-'x']))>MIN_MOTION_TIME || motionMagnitude>STRONG_MOVEMENT){//once the time difference is significant enough or movement is a strong movement
                             readings[6][a-'x']=readings[2][a-'x']-readings[3][a-'x'];//set speed
                             readings[6][a-'x']=readings[4][a-'x']<readings[5][a-'x']?readings[6][a-'x']:-readings[6][a-'x'];//set direction
-                            Log.d(String.valueOf((char)a).toUpperCase()+" axis","Speed: "+readings[6][a-'x']);
+                            //Log.d(String.valueOf((char)a).toUpperCase()+" axis","Speed: "+readings[6][a-'x']);
                         }
 
                     }
@@ -143,5 +142,9 @@ public class sensorClass implements SensorEventListener{
         for (int a=2;a<7;a++){
             readings[a][i]=0.0f;//reset the peak, min, peaktime, mintime, and speed of the ith axis
         }
+    }
+
+    public float[] getOrientationRelativeSpeedReadings() {
+        return readings[6];
     }
 }
