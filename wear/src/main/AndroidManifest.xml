@@ -5,6 +5,13 @@
     <uses-feature android:name="android.hardware.type.watch" />
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+    <uses-feature android:name="android.hardware.wifi" android:required="true"/>
 
     <application
         android:allowBackup="true"

@@ -29,6 +29,7 @@ public class sensorClass implements SensorEventListener{
     private final float MIN_MOTION_DELTA=8.0f;//minimum distance between peaks and trough in order to record an axis' speed
     private final long MIN_MOTION_TIME = 200; //minimum length of time user must move on a particular axis before reading is recorded
     private final float STRONG_MOVEMENT = 20.0f;
+    private final long ZERO_TIME = 500;
 
 
     private void setSensorManager(SensorManager x){
@@ -101,6 +102,12 @@ public class sensorClass implements SensorEventListener{
                         readings[5][a]=Math.abs(System.currentTimeMillis())%10000000;//update the time that the reading was taken
                     }
                     t=true;//set the flag that an update of peak / min was done
+
+                    //if the latest peak/min was set a long time ago, zero the axis
+                    long currTime = Math.abs(System.currentTimeMillis())%10000000;
+                    if (currTime>readings[4][a]+ZERO_TIME&&currTime>readings[5][a]+ZERO_TIME){
+                        zeroAxis(a);
+                    }
                 }
             }
             if (t){//once an update of peak / min was done
@@ -139,6 +146,7 @@ public class sensorClass implements SensorEventListener{
     }
 
     public void zeroAxis(int i) {
+        Log.d("ZERO","Zeroing the "+i+"th axis");
         for (int a=2;a<7;a++){
             readings[a][i]=0.0f;//reset the peak, min, peaktime, mintime, and speed of the ith axis
         }

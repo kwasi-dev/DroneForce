@@ -127,11 +127,7 @@ public class mobileMain extends AppCompatActivity {
     }
 
     //code for the buttons on main mo bile page
-    public void showSensor(View v){
-        startActivity(new Intent(this, sensorActivity.class));
-    }
-
-    public void handleDrone(View v){ startActivity(new Intent(this, droneActivity.class));}
+    //public void showSensor(View v){startActivity(new Intent(this, sensorActivity.class));}
 
     public void rescanDrones(View v){
         Log.d("RESCAN","Rescanning for drones");

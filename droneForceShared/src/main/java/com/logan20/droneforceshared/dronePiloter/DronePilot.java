@@ -11,4 +11,7 @@ public interface DronePilot {
     void takeOff();
     void land();
     void emergencyLand();
+    float[] getSensorSpeed();
+    boolean isLanded();
+
 }
