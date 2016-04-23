@@ -1,7 +1,9 @@
 package com.logan20.droneforceshared.dronePiloter;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.hardware.SensorManager;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.logan20.droneforceshared.sensorClass;
@@ -24,15 +26,29 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
     private ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM flyingState;
     private sensorClass sensor;
     private static final long THREAD_TIMEOUT = 200;
-    private final float EMERGENCYLAND = 20;
+    private final float EMERGENCYLAND = 40;
+    private final Context context;
     private ARDeviceController deviceController;
     private float[] prevReadings,currReadings;
     private static float SENSITIVITY = -5;
+    private ProgressDialog progress;
 
     public MiniDroneControllerListener(Context context, ARDeviceController deviceController){
         sensor=new sensorClass((SensorManager)context.getSystemService(Context.SENSOR_SERVICE));
         this.deviceController=deviceController;
+        this.context=context;
         pilotFromSensor();
+        initProgress();
+
+    }
+
+    private void initProgress() {
+        progress = new ProgressDialog(context);
+        progress.setMessage("Waiting for OK from drone");
+        progress.show();
+    }
+    private void stopProgress(){
+            progress.dismiss();
     }
 
     private void pilotFromSensor() {
@@ -47,6 +63,8 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                         //only if we have significant speed movement
                         switch (getState()){
                             case "landed state":
+                                //remove progress dialog
+                                stopProgress();
                                 //the only thing you can do when landed is take off
                                 if (currReadings[2]>0){
                                     takeOff();
@@ -86,7 +104,17 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
     }
 
     private void pilot() {
-        if (currReadings[0]!=0){
+        float vSpeed = currReadings[2];
+        float hSpeed = currReadings[0];
+        float dSPeed = currReadings[1];
+        int timestamp = (int)System.currentTimeMillis();
+        if (vSpeed>EMERGENCYLAND||hSpeed>EMERGENCYLAND){//land if extreme movement
+            deviceController.getFeatureMiniDrone().sendPilotingEmergency();
+        }
+        else{
+            deviceController.getFeatureMiniDrone().setPilotingPCMD((byte)1,(byte)0,(byte)dSPeed,(byte)hSpeed,(byte)vSpeed,timestamp);
+        }
+        /*if (currReadings[0]!=0){
             setHorizontalMotion(currReadings[0]*SENSITIVITY);
         }
         if (currReadings[1]!=0){
@@ -94,7 +122,8 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
         }
         if (currReadings[2]!=0){
             setVerticalMotion(currReadings[2]*SENSITIVITY);
-        }
+        }*/
+
     }
 
     private void setHorizontalMotion(float currReading) {
@@ -168,9 +197,11 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                 ARControllerArgumentDictionary<Object> args = elementDictionary.get(ARControllerDictionary.ARCONTROLLER_DICTIONARY_SINGLE_KEY);
                 if (args!=null){
                     Integer state = (Integer) args.get(ARFeatureMiniDrone.ARCONTROLLER_DICTIONARY_KEY_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE);
-                    flyingState = ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM.getFromValue(state);
+                    if (ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM.getFromValue(state)!=flyingState){
+                        Log.d("STATE",flyingState+" ");
+                    }
 
-                    Log.d("STATE",flyingState+" ");
+                    flyingState = ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM.getFromValue(state);
                 }
             }
         }

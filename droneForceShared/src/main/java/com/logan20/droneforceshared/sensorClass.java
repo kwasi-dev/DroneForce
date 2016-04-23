@@ -28,8 +28,7 @@ public class sensorClass implements SensorEventListener{
     private final float GYRO_ZERO_POINT = 0.05f; //noise level eliminator for gyroscope
     private final float MIN_MOTION_DELTA=8.0f;//minimum distance between peaks and trough in order to record an axis' speed
     private final long MIN_MOTION_TIME = 200; //minimum length of time user must move on a particular axis before reading is recorded
-    private final float STRONG_MOVEMENT = 20.0f;
-    private final long ZERO_TIME = 500;
+    private final long ZERO_TIME = 500;//if this time passes and there's no update of either min or max of an axis, reset that axis
 
 
     private void setSensorManager(SensorManager x){
@@ -114,7 +113,7 @@ public class sensorClass implements SensorEventListener{
                 for (int a='x';a<='z';a++){//for each of the x,y and z axis
                     float motionMagnitude =readings[2][a-'x']-readings[3][a-'x'];
                     if (motionMagnitude>MIN_MOTION_DELTA){//once the movement's significant enough
-                        if (Math.abs(Math.abs(readings[4][a-'x'])-Math.abs(readings[5][a-'x']))>MIN_MOTION_TIME || motionMagnitude>STRONG_MOVEMENT){//once the time difference is significant enough or movement is a strong movement
+                        if (Math.abs(Math.abs(readings[4][a-'x'])-Math.abs(readings[5][a-'x']))>MIN_MOTION_TIME){//once the time difference is significant enough or movement is a strong movement
                             readings[6][a-'x']=readings[2][a-'x']-readings[3][a-'x'];//set speed
                             readings[6][a-'x']=readings[4][a-'x']<readings[5][a-'x']?readings[6][a-'x']:-readings[6][a-'x'];//set direction
                             //Log.d(String.valueOf((char)a).toUpperCase()+" axis","Speed: "+readings[6][a-'x']);

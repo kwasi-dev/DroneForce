@@ -1,5 +1,7 @@
 package com.logan20.droneforceshared.dronePiloter;
 
+import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,9 +10,11 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AlertDialog;
+import android.app.AlertDialog;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.parrot.arsdk.ARSDK;
 import com.parrot.arsdk.arcontroller.ARControllerException;
@@ -41,13 +45,41 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
     private String droneType;
     private ARDeviceController deviceController;
     private Handler handler;
+    private ProgressDialog progress;
 
     public DroneFinder(final Context context){
         this.context=context; //set context in event i need to do anything on main context
         handler=new Handler(context.getMainLooper());
         ARSDK.loadSDKLibs();//load libraries for detection of drone
         findDrones(); //start required services necessary for finding the drone
+        showProgress();//show progress dialog that it's looking for drones
     }
+
+    private void showProgress() {
+        progress = new ProgressDialog(context);
+        progress.setMessage("Looking for drones");
+        progress.show();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    Thread.sleep(9000);
+                    if (progress!=null)progress.dismiss();
+                    if (drone==null){
+                        Looper.getMainLooper().prepare();
+                        new AlertDialog.Builder(context.getApplicationContext())
+                                .setTitle("Error")
+                                .setMessage("No drones found, please make sure your drone is powered on and discoverable")
+                                .show();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
 
     public void findDrones() {
         new Thread(new Runnable() {
@@ -121,6 +153,8 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
         if (deviceList.size()==1){
             //if only one drone is found, auto connect to the drone
             drone = createDiscoveryDevice(deviceList.get(0));
+            if (progress!=null) progress.dismiss();
+            Toast.makeText(context,"One drone found, auto-connecting",Toast.LENGTH_LONG);
         }
         else{
             //get list of drone names
@@ -141,13 +175,14 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                     .show();
         }
         if (drone!=null){
-            Log.d("SUCCESS","Connection to the drones was successful");
+            Log.d("SUCCESS","Connection to the drone was successful");
             switch(droneType){
                 case "minidrone":
                     try{
                         stopFindDrones(); //close off connection when finished
                         deviceController= new ARDeviceController(drone);//create the controller
                         deviceController.addListener(new MiniDroneControllerListener(context,deviceController));//add the listener
+                        progress.setMessage("Listening to the drone for the okay (if this message is on the screen for a while, please make sure your drone is on a flat surface");
                     } catch (ARControllerException e) {
                         e.printStackTrace();
                     }
@@ -173,7 +208,9 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
         });
     }
     public void stopDeviceController(){
-        deviceController.stop();
+        if (deviceController!=null){
+            deviceController.stop();//stops the background tasks etcadb
+        }
     }
 
     private ARDiscoveryDevice createDiscoveryDevice(ARDiscoveryDeviceService service){
@@ -225,5 +262,9 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
     private void unregisterReceivers() {
         LocalBroadcastManager localBroadcastMgr = LocalBroadcastManager.getInstance(context);
         localBroadcastMgr.unregisterReceiver(mArdiscoveryServicesDevicesListUpdatedReceiver);
+    }
+
+    public void stopAll() {
+        stopDeviceController();
     }
 }

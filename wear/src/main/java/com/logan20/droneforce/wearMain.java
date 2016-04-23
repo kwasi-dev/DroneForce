@@ -11,6 +11,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
+import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -21,54 +22,74 @@ import com.logan20.droneforceshared.dronePiloter.DroneFinder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.RunnableScheduledFuture;
 
 public class wearMain extends WearableActivity {
-    private final long WAIT_PERIOD = 10000;
-    private DroneFinder droneHandler;
-    protected CharSequence[] droneList;
-    private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
-            new SimpleDateFormat("HH:mm", Locale.US);
-
-    private BoxInsetLayout mContainerView;
-    private TextView mTextView;
-    private TextView mClockView;
     private final static int REQUEST_CODE = 123;
-    private DroneFinder droneFinder;
-    private boolean hasPermissions;
-
+    private DroneFinder droneHandler;
+    private boolean hasPermissions,clickable;
+    private ProgressDialog progress;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wear_main);
         setAmbientEnabled();
-
-        mContainerView = (BoxInsetLayout) findViewById(R.id.container);
-        mTextView = (TextView) findViewById(R.id.text);
-        mClockView = (TextView) findViewById(R.id.clock);
-        //request user permissions first before doing anything
-        permissions();
-        listenForDrones();
     }
 
+    public void setUp(View v){//this code will run only when user taps the line on the watch's screen
+        permissions();//request user permissions first before doing anything
+        listenForDrones();//set up activity that will listen for drones and connect to them
+        (findViewById(R.id.text2)).setClickable(false);//remove the clickable function of the textview to stop any errors
+        setupProgress();//set new progress dialog
+    }
+
+    private void setupProgress() {
+        progress = new ProgressDialog(this);//creates new progress dialog
+        progress.setMessage("Please wait");//sets themessage of the dialog
+        progress.show();//shows the dialog
+    }
+    private void stopProgress(){
+        if (progress!=null){
+            progress.dismiss();//stop the progress bar
+        }
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        droneHandler.stopAll();//stops the background tasks and threads in the other classes
+    }
     private void init() {
         droneHandler = new DroneFinder(this);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.currentThread().sleep(3000);
+                    progress.dismiss();//exits the progress dialog
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private void listenForDrones() {
         if (hasPermissions==false){
-            Toast.makeText(this,"You have not granted all required permissions, please grant permissions",Toast.LENGTH_LONG);
-            finish();
+            stopProgress();//removes the progress dialog
+            Toast.makeText(this,"You have not granted all required permissions, please grant permissions",Toast.LENGTH_LONG);//display to the user to give permissions
         }
         else{
-            droneFinder=new DroneFinder(this);
+            init();//start the core of the progream
         }
     }
 
     private void permissions() {
+        //check for permissions
         if (ContextCompat.checkSelfPermission(wearMain.this, Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(wearMain.this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(wearMain.this,Manifest.permission.BLUETOOTH)!=PackageManager.PERMISSION_GRANTED){
-            //show explaination
+            //show explaination if necessary
             if (ActivityCompat.shouldShowRequestPermissionRationale(wearMain.this,Manifest.permission.ACCESS_FINE_LOCATION)||ActivityCompat.shouldShowRequestPermissionRationale(wearMain.this,Manifest.permission.ACCESS_COARSE_LOCATION)){
                 new AsyncTask<Void,Void,Void>(){
 
@@ -76,7 +97,7 @@ public class wearMain extends WearableActivity {
                     protected Void doInBackground(Void... params) {
                         new android.support.v7.app.AlertDialog.Builder(wearMain.this)
                                 .setTitle("Request Permissions")
-                                .setMessage("The app will not work without permissions")
+                                .setMessage("The app will not work without permissions necessary")
                                 .show();
                         return null;
                     }
@@ -124,32 +145,16 @@ public class wearMain extends WearableActivity {
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
-        updateDisplay();
     }
 
     @Override
     public void onUpdateAmbient() {
         super.onUpdateAmbient();
-        updateDisplay();
     }
 
     @Override
     public void onExitAmbient() {
-        updateDisplay();
         super.onExitAmbient();
     }
 
-    private void updateDisplay() {
-        if (isAmbient()) {
-            mContainerView.setBackgroundColor(getResources().getColor(android.R.color.black));
-            mTextView.setTextColor(getResources().getColor(android.R.color.white));
-            mClockView.setVisibility(View.VISIBLE);
-
-            mClockView.setText(AMBIENT_DATE_FORMAT.format(new Date()));
-        } else {
-            mContainerView.setBackground(null);
-            mTextView.setTextColor(getResources().getColor(android.R.color.black));
-            mClockView.setVisibility(View.GONE);
-        }
-    }
 }
