@@ -1,6 +1,5 @@
 package com.logan20.droneforceshared.dronePiloter;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,7 +9,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
 import android.app.AlertDialog;
 import android.util.Log;
@@ -19,6 +17,7 @@ import android.widget.Toast;
 import com.parrot.arsdk.ARSDK;
 import com.parrot.arsdk.arcontroller.ARControllerException;
 import com.parrot.arsdk.arcontroller.ARDeviceController;
+import com.parrot.arsdk.arcontroller.ARDeviceControllerListener;
 import com.parrot.arsdk.ardiscovery.ARDISCOVERY_PRODUCT_ENUM;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDevice;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceBLEService;
@@ -46,7 +45,7 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
     private ARDeviceController deviceController;
     private Handler handler;
     private ProgressDialog progress;
-
+    private MiniDroneControllerListener listener;
     public DroneFinder(final Context context){
         this.context=context; //set context in event i need to do anything on main context
         handler=new Handler(context.getMainLooper());
@@ -66,13 +65,6 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                 try{
                     Thread.sleep(9000);
                     if (progress!=null)progress.dismiss();
-                    if (drone==null){
-                        Looper.getMainLooper().prepare();
-                        new AlertDialog.Builder(context.getApplicationContext())
-                                .setTitle("Error")
-                                .setMessage("No drones found, please make sure your drone is powered on and discoverable")
-                                .show();
-                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -154,7 +146,7 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
             //if only one drone is found, auto connect to the drone
             drone = createDiscoveryDevice(deviceList.get(0));
             if (progress!=null) progress.dismiss();
-            Toast.makeText(context,"One drone found, auto-connecting",Toast.LENGTH_LONG);
+            Toast.makeText(context.getApplicationContext(),"One drone found, auto-connecting",Toast.LENGTH_LONG);
         }
         else{
             //get list of drone names
@@ -181,7 +173,8 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                     try{
                         stopFindDrones(); //close off connection when finished
                         deviceController= new ARDeviceController(drone);//create the controller
-                        deviceController.addListener(new MiniDroneControllerListener(context,deviceController));//add the listener
+                        listener = new MiniDroneControllerListener(context,deviceController);
+                        deviceController.addListener(listener);//add the listener
                         progress.setMessage("Listening to the drone for the okay (if this message is on the screen for a while, please make sure your drone is on a flat surface");
                     } catch (ARControllerException e) {
                         e.printStackTrace();
@@ -190,7 +183,6 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                 default:
                     Log.d("SUPPORT","Program doesn't yet support this type of drone");
                     break;
-
             }
         }
         if (deviceController!=null){
@@ -265,6 +257,23 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
     }
 
     public void stopAll() {
+        //listener.stopPilot();
+        removeListener();
         stopDeviceController();
+
+    }
+
+    private void removeListener() {
+        if (deviceController!=null){
+            deviceController.removeListener(listener);
+        }
+    }
+
+    public void toggleAutoTakeoff() {
+        if (deviceController!=null){
+            if (listener!=null){
+                listener.toggleAutoTakeoff();
+            }
+        }
     }
 }

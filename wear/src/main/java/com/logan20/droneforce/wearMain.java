@@ -1,28 +1,22 @@
 package com.logan20.droneforce;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
-import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.logan20.droneforceshared.dronePiloter.DroneFinder;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.concurrent.RunnableScheduledFuture;
 
 public class wearMain extends WearableActivity {
     private final static int REQUEST_CODE = 123;
@@ -34,18 +28,31 @@ public class wearMain extends WearableActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wear_main);
         setAmbientEnabled();
+        initBkg();
+    }
+
+    private void initBkg() {
+        BoxInsetLayout mContainer = (BoxInsetLayout)findViewById(R.id.container);
+        RelativeLayout mLayout = (RelativeLayout)findViewById(R.id.mainLinLayout);
+
+        mContainer.setBackgroundColor(Color.parseColor("#80ffaa"));
+        mLayout.setBackgroundColor(Color.WHITE);
     }
 
     public void setUp(View v){//this code will run only when user taps the line on the watch's screen
         permissions();//request user permissions first before doing anything
         listenForDrones();//set up activity that will listen for drones and connect to them
-        (findViewById(R.id.text2)).setClickable(false);//remove the clickable function of the textview to stop any errors
         setupProgress();//set new progress dialog
     }
 
+    public void toggleAutoTakeoff(View v){
+        if (droneHandler!=null){
+            droneHandler.toggleAutoTakeoff();
+        }
+    }
     private void setupProgress() {
         progress = new ProgressDialog(this);//creates new progress dialog
-        progress.setMessage("Please wait");//sets themessage of the dialog
+        progress.setMessage("Please wait");//sets the message of the dialog
         progress.show();//shows the dialog
     }
     private void stopProgress(){
@@ -57,7 +64,8 @@ public class wearMain extends WearableActivity {
     @Override
     protected void onPause(){
         super.onPause();
-        droneHandler.stopAll();//stops the background tasks and threads in the other classes
+        if (droneHandler!=null)
+            droneHandler.stopAll();//stops the background tasks and threads in the other classes
     }
     private void init() {
         droneHandler = new DroneFinder(this);
