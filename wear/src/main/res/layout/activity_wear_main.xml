@@ -12,57 +12,55 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tv_mainTxt"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="@string/welcome"
-            android:layout_marginStart="60dp"
-            android:paddingBottom="20dp"
-            app:layout_box="all"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="65dp"
-            android:layout_alignParentBottom="true" />
-
 
         <RelativeLayout
             android:orientation="horizontal"
             android:id="@+id/mainLinLayout"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:layout_alignBottom="@+id/tv_mainTxt"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentStart="true">
 
             <Button
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:id="@+id/btnEmergencyLand"
                 android:background="@drawable/emergency_disabled"
 
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="30dp"
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true" />
+                android:layout_alignParentTop="true"
+                android:layout_toStartOf="@+id/btnConnect" />
             <Button
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
                 android:id="@+id/btnConnect"
                 android:background="@drawable/connect_enabled"
                 android:clickable="true"
                 android:onClick="setUp"
-                android:layout_alignParentBottom="true"
-                android:layout_toEndOf="@+id/btnEmergencyLand" />
+                android:layout_centerVertical="true"
+                android:layout_centerHorizontal="true" />
 
             <Button
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:id="@+id/btnAutoTakeoff"
                 android:background="@drawable/auto_hover_disabled"
-
                 android:onClick="toggleAutoTakeoff"
-                android:layout_alignTop="@+id/btnEmergencyLand"
+                android:layout_alignParentTop="true"
                 android:layout_toEndOf="@+id/btnConnect" />
+
         </RelativeLayout>
+
+        <TextView
+            android:id="@+id/tv_mainTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/welcome"
+            android:paddingBottom="20dp"
+            android:textSize="25sp"
+            app:layout_box="all"
+            android:layout_above="@+id/mainLinLayout"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="35dp" />
     </RelativeLayout>
 </android.support.wearable.view.BoxInsetLayout>

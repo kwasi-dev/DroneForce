@@ -3,10 +3,12 @@ package com.logan20.droneforceshared.dronePiloter;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.hardware.SensorManager;
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.logan20.droneforceshared.R;
 import com.logan20.droneforceshared.sensorClass;
 import com.parrot.arsdk.arcommands.ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DEVICE_STATE_ENUM;
@@ -20,6 +22,8 @@ import com.parrot.arsdk.arcontroller.ARFeatureCommon;
 import com.parrot.arsdk.arcontroller.ARFeatureMiniDrone;
 import com.parrot.arsdk.ardiscovery.ARDISCOVERY_PRODUCT_ENUM;
 
+import org.w3c.dom.Text;
+
 /**
  * Created by kwasi on 4/14/2016.
  */
@@ -31,29 +35,22 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
     private Context context;
     private ARDeviceController deviceController;
     private float[] currReadings;
-    public int toggle=0;
-    private ProgressDialog progress;
+    public volatile int toggle;
     private Thread pilotThread;
-
+    private int firstConnect=1;
     public MiniDroneControllerListener(Context ctx, ARDeviceController dvc){
         deviceController=dvc;
+        toggle=0;
         context=ctx;
+        sensor=new sensorClass((SensorManager)context.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
         pilotFromSensor();
         initProgress();
     }
 
     private void initProgress() {
-        progress = new ProgressDialog(context);
-        progress.setMessage("Waiting for OK from drone");
-        progress.show();
+        Toast.makeText(context.getApplicationContext(),"Waiting on OK from drone, Please wait",Toast.LENGTH_LONG).show();
     }
-    private void stopProgress(){
-        if(progress!=null){
-            progress.dismiss();
-            progress=null;
-        }
 
-    }
     public void toggleAutoTakeoff(){
         if (deviceController!=null){
             toggle=1-toggle;
@@ -78,35 +75,25 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                         if (currReadings[0]!=0.0f&&currReadings[1]!=0.0f&&currReadings[2]!=0.0f){
                             //only if we have significant speed movement
                             switch (getState()){
+                                case "":
+                                    break;
                                 case "landed state":
                                     //the only thing you can do when landed is take off
                                     if (currReadings[2]>0){
+                                        if (firstConnect==1){
+                                            Toast.makeText(context.getApplicationContext(),"Drone Connected, Begin piloting",Toast.LENGTH_LONG).show();
+                                            firstConnect=0;
+                                        }
                                         takeOff();
-                                        stopProgress();
                                         Log.d("TAKEOFF","Takeoff initiated with speed :"+currReadings[2]);
-                                    }
-                                    else{
-                                        pilot();
                                     }
                                     break;
                                 case "emergency state":
                                     Log.d("Emergency","Emergency state");
                                     //prompt the user of battery level or that emergency state initiated
                                     break;
-                                case "taking off state":
-                                    //if you're taking off, the only thing you can do is go higher
-                                    if (currReadings[2]<0){
-                                        deviceController.getFeatureMiniDrone().setPilotingPCMDYaw((byte)currReadings[2]);
-                                    }
-                                    break;
-                                case "flying state":
-                                    pilot();
-                                    break;
-                                case "hovering state":
-                                    pilot();
-                                    break;
                                 default:
-                                    break;
+                                    pilot();
                             }
                         }
                         Log.d("State",flyingState+" ");
@@ -122,18 +109,12 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
         });
         pilotThread.start();
     }
-
-    public void stopPilot(){
-        if (pilotThread!=null){
-            pilotThread.interrupt();
-        }
-    }
     private void pilot() {
         float vSpeed = currReadings[2];
         float hSpeed = currReadings[0];
         float dSPeed = currReadings[1];
         int timestamp = (int)System.currentTimeMillis();
-        if (vSpeed>EMERGENCYLAND||hSpeed>EMERGENCYLAND){//land if extreme movement
+        if (vSpeed>EMERGENCYLAND||hSpeed>EMERGENCYLAND||hSpeed>EMERGENCYLAND){//land if extreme movement
             deviceController.getFeatureMiniDrone().sendPilotingEmergency();
         }
         else{
@@ -145,12 +126,12 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
         deviceController.getFeatureMiniDrone().sendPilotingTakeOff();
     }
 
-    @Nullable
+    @NonNull
     private String getState(){
         if (flyingState!=null){
             return (flyingState+"").toLowerCase();
         }
-        return null;
+        return "";
     }
     @Override
     public void onStateChanged(ARDeviceController deviceController, ARCONTROLLER_DEVICE_STATE_ENUM newState, ARCONTROLLER_ERROR_ENUM error) {
@@ -163,8 +144,6 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                 break;
             case ARCONTROLLER_DEVICE_STATE_STARTING:
                 Log.d("STATE","Controller is STARTING");
-                if (sensor==null)
-                    sensor=new sensorClass((SensorManager)context.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
                 break;
             case ARCONTROLLER_DEVICE_STATE_STOPPING:
                 Log.d("STATE","Controller is STOPPING");

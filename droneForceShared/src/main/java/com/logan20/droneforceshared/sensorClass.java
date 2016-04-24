@@ -28,7 +28,7 @@ public class sensorClass implements SensorEventListener{
     private final float GYRO_ZERO_POINT = 0.05f; //noise level eliminator for gyroscope
     private final float MIN_MOTION_DELTA=8.0f;//minimum distance between peaks and trough in order to record an axis' speed
     private final long MIN_MOTION_TIME = 200; //minimum length of time user must move on a particular axis before reading is recorded
-    private final long ZERO_TIME = 500;//if this time passes and there's no update of either min or max of an axis, reset that axis
+    private final long ZERO_TIME = 300;//if this time passes and there's no update of either min or max of an axis, reset that axis
 
 
     private void setSensorManager(SensorManager x){
@@ -145,7 +145,7 @@ public class sensorClass implements SensorEventListener{
     }
 
     public void zeroAxis(int i) {
-        Log.d("ZERO","Zeroing the "+i+"th axis");
+        //Log.d("ZERO","Zeroing the "+i+"th axis");
         for (int a=2;a<7;a++){
             readings[a][i]=0.0f;//reset the peak, min, peaktime, mintime, and speed of the ith axis
         }

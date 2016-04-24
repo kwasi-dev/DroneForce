@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">DroneForce</string>
     <string name="hello_world">Hello World!</string>
-    <string name="welcome">Project: DroneForce</string>
+    <string name="welcome">DroneForce</string>
     <string name="welcomeSmallMsg">Tap here to continue</string>
 </resources>

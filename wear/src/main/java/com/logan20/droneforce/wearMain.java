@@ -21,8 +21,9 @@ import com.logan20.droneforceshared.dronePiloter.DroneFinder;
 public class wearMain extends WearableActivity {
     private final static int REQUEST_CODE = 123;
     private DroneFinder droneHandler;
-    private boolean hasPermissions,clickable;
+    private boolean hasPermissions;
     private ProgressDialog progress;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,12 +62,13 @@ public class wearMain extends WearableActivity {
         }
     }
 
-    @Override
+    /*@Override
     protected void onPause(){
         super.onPause();
         if (droneHandler!=null)
             droneHandler.stopAll();//stops the background tasks and threads in the other classes
-    }
+    }*/
+
     private void init() {
         droneHandler = new DroneFinder(this);
         new Thread(new Runnable() {
