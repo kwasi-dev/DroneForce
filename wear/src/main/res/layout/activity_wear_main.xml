@@ -10,12 +10,13 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:id="@+id/mainRelLayout">
 
 
         <RelativeLayout
             android:orientation="horizontal"
-            android:id="@+id/mainLinLayout"
+            android:id="@+id/buttonRelLayout"
             android:layout_width="match_parent"
             android:layout_height="100dp"
             android:layout_alignParentBottom="true"
@@ -59,7 +60,7 @@
             android:paddingBottom="20dp"
             android:textSize="25sp"
             app:layout_box="all"
-            android:layout_above="@+id/mainLinLayout"
+            android:layout_above="@+id/buttonRelLayout"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="35dp" />
     </RelativeLayout>

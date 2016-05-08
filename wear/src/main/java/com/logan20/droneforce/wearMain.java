@@ -1,49 +1,56 @@
 package com.logan20.droneforce;
 
 import android.Manifest;
-import android.app.ProgressDialog;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
 import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.logan20.droneforceshared.dronePiloter.DroneFinder;
 
 
 public class wearMain extends WearableActivity {
-    private final static int REQUEST_CODE = 123;
+    private final int REQUEST_CODE_LOC = 123;
+    private final int REQUEST_CODE_BLE = 124;
     private DroneFinder droneHandler;
-    private boolean hasPermissions;
-    private ProgressDialog progress;
+    private boolean hasPermLoc=true,hasPermBle=true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wear_main);
         setAmbientEnabled();
-        initBkg();
+        permissions();//request user permissions first before doing anything
+        initBkg(); //sets up the color scheme of the layout
     }
 
     private void initBkg() {
-        BoxInsetLayout mContainer = (BoxInsetLayout)findViewById(R.id.container);
-        RelativeLayout mLayout = (RelativeLayout)findViewById(R.id.mainLinLayout);
-
-        mContainer.setBackgroundColor(Color.parseColor("#80ffaa"));
-        mLayout.setBackgroundColor(Color.WHITE);
+        BoxInsetLayout mContainer = (BoxInsetLayout)findViewById(R.id.container);//gets the main container
+        RelativeLayout mLayout = (RelativeLayout)findViewById(R.id.buttonRelLayout);//gets the main linear layout
+        mContainer.setBackgroundColor(Color.parseColor("#80ffaa"));//sets the color of the container to be green
+        mLayout.setBackgroundColor(Color.WHITE);//sets the color of the linear layout tobe white
     }
 
     public void setUp(View v){//this code will run only when user taps the line on the watch's screen
-        permissions();//request user permissions first before doing anything
-        listenForDrones();//set up activity that will listen for drones and connect to them
-        setupProgress();//set new progress dialog
+
+        if (hasPermBle){
+            listenForDrones();//set up activity that will listen for drones and connect to them
+        }
+        else{
+            new AlertDialog.Builder(this)
+                    .setMessage("Bluetooth not accessible, please allow the application to access bluetooth services")
+                    .setPositiveButton(android.R.string.ok,null)
+                    .show();
+        }
     }
 
     public void toggleAutoTakeoff(View v){
@@ -51,120 +58,83 @@ public class wearMain extends WearableActivity {
             droneHandler.toggleAutoTakeoff();
         }
     }
-    private void setupProgress() {
-        progress = new ProgressDialog(this);//creates new progress dialog
-        progress.setMessage("Please wait");//sets the message of the dialog
-        progress.show();//shows the dialog
-    }
-    private void stopProgress(){
-        if (progress!=null){
-            progress.dismiss();//stop the progress bar
-        }
-    }
-
-    /*@Override
-    protected void onPause(){
-        super.onPause();
-        if (droneHandler!=null)
-            droneHandler.stopAll();//stops the background tasks and threads in the other classes
-    }*/
-
     private void init() {
-        droneHandler = new DroneFinder(this);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.currentThread().sleep(3000);
-                    progress.dismiss();//exits the progress dialog
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        droneHandler = new DroneFinder(this,this);
     }
 
     private void listenForDrones() {
-        if (hasPermissions==false){
-            stopProgress();//removes the progress dialog
-            Toast.makeText(this,"You have not granted all required permissions, please grant permissions",Toast.LENGTH_LONG);//display to the user to give permissions
-        }
-        else{
-            init();//start the core of the progream
+        if (hasPermLoc){
+            init();//start the core of the program
         }
     }
 
     private void permissions() {
-        //check for permissions
-        if (ContextCompat.checkSelfPermission(wearMain.this, Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(wearMain.this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(wearMain.this,Manifest.permission.BLUETOOTH)!=PackageManager.PERMISSION_GRANTED){
-            //show explaination if necessary
-            if (ActivityCompat.shouldShowRequestPermissionRationale(wearMain.this,Manifest.permission.ACCESS_FINE_LOCATION)||ActivityCompat.shouldShowRequestPermissionRationale(wearMain.this,Manifest.permission.ACCESS_COARSE_LOCATION)){
-                new AsyncTask<Void,Void,Void>(){
+        //Permission check 
 
-                    @Override
-                    protected Void doInBackground(Void... params) {
-                        new android.support.v7.app.AlertDialog.Builder(wearMain.this)
-                                .setTitle("Request Permissions")
-                                .setMessage("The app will not work without permissions necessary")
-                                .show();
-                        return null;
-                    }
-                }.execute();
-            }
-            else {
-                //Request permissions
-                ActivityCompat.requestPermissions(wearMain.this,new String[]{
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.BLUETOOTH
-                },REQUEST_CODE);
-            }
+        //location
+        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            hasPermLoc=false;
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Access needed");
+            builder.setMessage("This app needs location access so that the drone will be able to send signals properly to the device. Please grant access.");
+            builder.setPositiveButton(android.R.string.ok, null);
+            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                public void onDismiss(DialogInterface dialog) {
+                    ActivityCompat.requestPermissions(wearMain.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE_LOC);
+                }
+            });
+            builder.show();
         }
-        else{
-            //app has permissions
-            Log.d("PERMISSIONS","All permissions are granted");
-            hasPermissions=true;
+        //bluetooth
+        if(ActivityCompat.checkSelfPermission(this,Manifest.permission.BLUETOOTH)!= PackageManager.PERMISSION_GRANTED){
+            hasPermBle=false;
+            new AlertDialog.Builder(this)
+                    .setTitle("Bluetooth permission")
+                    .setMessage("Depending on the drone bluetooth may be needed to communicate, please grant bluetooth permissions")
+                    .setPositiveButton(android.R.string.ok,null)
+                    .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialog) {
+                            ActivityCompat.requestPermissions(wearMain.this,new String[]{Manifest.permission.BLUETOOTH_ADMIN},REQUEST_CODE_BLE);
+                        }
+                    })
+                    .show();
         }
-
     }
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
-        switch (requestCode){
-            case REQUEST_CODE:
-                if(permissions.length>0) {
-                    boolean access=true;
-                    for (int a=0;a<permissions.length;a++){//cycle through all permissions as all are needed
-                        if (grantResults[a]!=PackageManager.PERMISSION_GRANTED){
-                            access=false;
-                            break;
-                        }
-                    }
-                    if (!access){
-                        Toast.makeText(this,"Please grant all permissions",Toast.LENGTH_LONG).show();
-                    }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        switch (requestCode) {
+            case REQUEST_CODE_LOC:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("GRANT", "Coarse location granted");
+                    hasPermLoc = true;
+                } else {
+                    Log.d("Grant", "Location access denied");
+                    new AlertDialog.Builder(this)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .setMessage("App will now exit. Permissions needed")
+                            .setOnDismissListener(new Dialog.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                    finish();
+                                }
+                            })
+                            .show();
                 }
                 break;
-            default:
-                Toast.makeText(this,"Please grant all permissions",Toast.LENGTH_LONG).show();
+            case REQUEST_CODE_BLE:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("GRANT", "Bluetooth permission granted");
+                    hasPermBle = true;
+                } else {
+                    new AlertDialog.Builder(this)
+                            .setMessage("You will not be able to connect to any bluetooth drones, press OK to continue")
+                            .setTitle("Permission")
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show();
+                }
+                break;
+
         }
     }
-
-
-    @Override
-    public void onEnterAmbient(Bundle ambientDetails) {
-        super.onEnterAmbient(ambientDetails);
-    }
-
-    @Override
-    public void onUpdateAmbient() {
-        super.onUpdateAmbient();
-    }
-
-    @Override
-    public void onExitAmbient() {
-        super.onExitAmbient();
-    }
-
 }
