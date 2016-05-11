@@ -13,10 +13,9 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-
-import com.logan20.droneforceshared.dronePiloter.DroneFinder;
-
 
 public class wearMain extends WearableActivity {
     private final int REQUEST_CODE_LOC = 123;
@@ -28,15 +27,21 @@ public class wearMain extends WearableActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wear_main);
-        setAmbientEnabled();
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         permissions();//request user permissions first before doing anything
         initBkg(); //sets up the color scheme of the layout
     }
-
+    @Override
+    protected void onStop(){
+        if (droneHandler!=null) {
+            droneHandler.stopAll();
+        }
+        super.onStop();
+    }
     private void initBkg() {
         BoxInsetLayout mContainer = (BoxInsetLayout)findViewById(R.id.container);//gets the main container
         RelativeLayout mLayout = (RelativeLayout)findViewById(R.id.buttonRelLayout);//gets the main linear layout
-        mContainer.setBackgroundColor(Color.parseColor("#80ffaa"));//sets the color of the container to be green
+        mContainer.setBackgroundColor(Color.parseColor("#80FFAA"));//sets the color of the container to be green
         mLayout.setBackgroundColor(Color.WHITE);//sets the color of the linear layout tobe white
     }
 
@@ -44,18 +49,14 @@ public class wearMain extends WearableActivity {
 
         if (hasPermBle){
             listenForDrones();//set up activity that will listen for drones and connect to them
+            v.setClickable(false);
+            v.setBackgroundResource(R.drawable.connect_disabled);
         }
         else{
             new AlertDialog.Builder(this)
                     .setMessage("Bluetooth not accessible, please allow the application to access bluetooth services")
                     .setPositiveButton(android.R.string.ok,null)
                     .show();
-        }
-    }
-
-    public void toggleAutoTakeoff(View v){
-        if (droneHandler!=null){
-            droneHandler.toggleAutoTakeoff();
         }
     }
     private void init() {
