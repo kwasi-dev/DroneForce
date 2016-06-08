@@ -29,7 +29,7 @@ public class sensorClass implements SensorEventListener{
     private final float MIN_MOTION_DELTA=8.0f;//minimum distance between peaks and trough in order to record an axis' speed
     private final long MIN_MOTION_TIME = 200; //minimum length of time user must move on a particular axis before reading is recorded
     private final long ZERO_TIME = 300;//if this time passes and there's no update of either min or max of an axis, reset that axis
-
+    private Thread zeroThd;
 
     private void setSensorManager(SensorManager x){
         sm = x;
@@ -44,26 +44,42 @@ public class sensorClass implements SensorEventListener{
         initArr();//initialise the arrays that hold data
         setSensors(); //sets the sensors
         registerListeners(); //register the sensors
+        zeroThread();
+    }
+
+    private void zeroThread() {
+        zeroThd = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!Thread.interrupted()){
+                    //if the latest peak/min was set a long time ago, zero the axis
+                    long currTime = Math.abs(System.currentTimeMillis())%10000000;
+                    for (int a=0;a<3;a++){
+                        if (currTime>readings[4][a]+ZERO_TIME&&currTime>readings[5][a]+ZERO_TIME){
+                            zeroAxis(a);
+                        }
+                    }
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        });
+        zeroThd.start();
     }
 
     public void registerListeners(){
         sm.registerListener(this, sGyro, SensorManager.SENSOR_DELAY_FASTEST); //registers the listeners for the gyroscope
         sm.registerListener(this, sAccel, SensorManager.SENSOR_DELAY_FASTEST);//register the listeners for the accelerometer
     }
-    public double[] getCurrentSensorReading(String sensor){//gets reading of a particular sensor
-        int row=0; //row of the array being accessed (defaulted to accelerometer)
-        if (sensor.toLowerCase().equals("gyroscope"))  row=1; //(if gyroscope reading is the one requested, shift the row
-
-        double[] arr=new double[3]; //new array to hold all data(formatted to 2dp)
-        for (int a=0;a<3;a++){
-            arr[a]=Double.valueOf(new DecimalFormat("#.##").format(readings[row][a]));
-        }
-        return arr;
-    }
-
     public void unregisterListeners(){ //unregister listeners to save battery when sensors not in use
         sm.unregisterListener(this, sGyro);
         sm.unregisterListener(this, sAccel);
+        if (zeroThd!=null)
+            zeroThd.interrupt();
     }
 
     private void setSensors(){//sets the sensors
@@ -74,13 +90,12 @@ public class sensorClass implements SensorEventListener{
     @Override
     public void onSensorChanged(SensorEvent event) {
         updateSensors(event);
-        resetPeakMin();
     }
 
-    private void resetPeakMin() {//needed to reset the values of each axis so that new readings can be obtained, values cannot be defaulted to 0
+    public void resetPeakMin() {//needed to reset the values of each axis so that new readings can be obtained, values cannot be defaulted to 0
         for (int a=0;a<3;a++){
-            if (readings[2][a]==0.0f) readings[2][a]=readings[0][a];
-            if (readings[3][a]==0.0f) readings[3][a]=readings[0][a];
+            readings[2][a]=readings[0][a];
+            readings[3][a]=readings[0][a];
         }
     }
 
@@ -101,12 +116,6 @@ public class sensorClass implements SensorEventListener{
                         readings[5][a]=Math.abs(System.currentTimeMillis())%10000000;//update the time that the reading was taken
                     }
                     t=true;//set the flag that an update of peak / min was done
-
-                    //if the latest peak/min was set a long time ago, zero the axis
-                    long currTime = Math.abs(System.currentTimeMillis())%10000000;
-                    if (currTime>readings[4][a]+ZERO_TIME&&currTime>readings[5][a]+ZERO_TIME){
-                        zeroAxis(a);
-                    }
                 }
             }
             if (t){//once an update of peak / min was done
@@ -152,6 +161,14 @@ public class sensorClass implements SensorEventListener{
     }
 
     public float[] getOrientationRelativeSpeedReadings() {
-        return readings[6];
+        float[] ret=new float[3];
+        int highest=1;
+        for (int a=0;a<3;a++){
+            ret[a]=0.0f;
+        }
+        highest = readings[6][0]>readings[6][1]&&readings[6][0]>readings[6][2]?0:readings[6][2]>readings[6][0]&&readings[6][2]>readings[6][1]?2:1;
+        ret[highest]=readings[6][highest];
+        return ret;
     }
+
 }

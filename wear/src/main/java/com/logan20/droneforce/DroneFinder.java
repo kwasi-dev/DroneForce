@@ -43,7 +43,7 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
     private ARDeviceController deviceController;
     private Handler handler;
     private ProgressDialog progress;
-    private MiniDroneControllerListener listener;
+    private DroneListenerClass listener;
     public DroneFinder(final Context context,final Activity activity){
         this.context=context; //set context in event i need to do anything on main context
         this.activity=activity;
@@ -184,7 +184,17 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                     try{
                         stopFindDrones(); //close off connection when finished
                         deviceController= new ARDeviceController(drone);//create the controller
-                        listener = new MiniDroneControllerListener(activity,context,deviceController,droneName);
+                        listener = new DroneListenerClass(activity,context,deviceController,droneName,droneType);
+                        deviceController.addListener(listener);//add the listener
+                    } catch (ARControllerException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "bebop2":
+                    try{
+                        stopFindDrones(); //close off connection when finished
+                        deviceController= new ARDeviceController(drone);//create the controller
+                        listener = new DroneListenerClass(activity,context,deviceController,droneName,droneType);
                         deviceController.addListener(listener);//add the listener
                     } catch (ARControllerException e) {
                         e.printStackTrace();
@@ -230,6 +240,18 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                 e.printStackTrace();
             }
         }
+        else if ((ARDISCOVERY_PRODUCT_ENUM.ARDISCOVERY_PRODUCT_BEBOP_2.equals(ARDiscoveryService.getProductFromProductID(service.getProductID())))){
+            try{
+                drone = new ARDiscoveryDevice();
+                //WIFI CONNECTION is used by bebop
+                ARDiscoveryDeviceNetService netDeviceService = (ARDiscoveryDeviceNetService) service.getDevice();
+                drone.initWifi(ARDISCOVERY_PRODUCT_ENUM.ARDISCOVERY_PRODUCT_BEBOP_2, netDeviceService.getName(), netDeviceService.getIp(), netDeviceService.getPort());
+                droneType="bebop2";
+            }
+            catch (ARDiscoveryException e){
+                e.printStackTrace();
+            }
+        }
         else if (ARDISCOVERY_PRODUCT_ENUM.ARDISCOVERY_PRODUCT_MINIDRONE.equals(ARDiscoveryService.getProductFromProductID(service.getProductID()))){
             try{
                 drone = new ARDiscoveryDevice();
@@ -242,6 +264,7 @@ public class DroneFinder implements ARDiscoveryServicesDevicesListUpdatedReceive
                 e.printStackTrace();
             }
         }
+
 
         Log.d("Set Complete","setting of drone complete");
         return drone;

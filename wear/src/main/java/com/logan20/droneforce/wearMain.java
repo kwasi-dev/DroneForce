@@ -14,7 +14,6 @@ import android.support.wearable.view.BoxInsetLayout;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 public class wearMain extends WearableActivity {
@@ -31,6 +30,7 @@ public class wearMain extends WearableActivity {
         permissions();//request user permissions first before doing anything
         initBkg(); //sets up the color scheme of the layout
     }
+
     @Override
     protected void onStop(){
         if (droneHandler!=null) {
@@ -38,6 +38,7 @@ public class wearMain extends WearableActivity {
         }
         super.onStop();
     }
+
     private void initBkg() {
         BoxInsetLayout mContainer = (BoxInsetLayout)findViewById(R.id.container);//gets the main container
         RelativeLayout mLayout = (RelativeLayout)findViewById(R.id.buttonRelLayout);//gets the main linear layout
@@ -135,7 +136,6 @@ public class wearMain extends WearableActivity {
                             .show();
                 }
                 break;
-
         }
     }
 }

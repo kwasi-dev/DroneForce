@@ -16,6 +16,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.parrot.arsdk.arcommands.ARCOMMANDS_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM;
 import com.parrot.arsdk.arcommands.ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DEVICE_STATE_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DICTIONARY_KEY_ENUM;
@@ -24,34 +25,41 @@ import com.parrot.arsdk.arcontroller.ARControllerArgumentDictionary;
 import com.parrot.arsdk.arcontroller.ARControllerDictionary;
 import com.parrot.arsdk.arcontroller.ARDeviceController;
 import com.parrot.arsdk.arcontroller.ARDeviceControllerListener;
+import com.parrot.arsdk.arcontroller.ARFeatureARDrone3;
 import com.parrot.arsdk.arcontroller.ARFeatureCommon;
 import com.parrot.arsdk.arcontroller.ARFeatureMiniDrone;
 import com.parrot.arsdk.ardiscovery.ARDISCOVERY_PRODUCT_ENUM;
 
 
-public class MiniDroneControllerListener implements ARDeviceControllerListener{
-    private ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM flyingState;
+public class DroneListenerClass implements ARDeviceControllerListener{
+    private Enum flyingState;
     private sensorClass sensor;
-    private static final long THREAD_TIMEOUT = 200;
+    private static final long THREAD_TIMEOUT = 50;
     private Context context;
     private Activity activity;
     private ARDeviceController deviceController;
     private Thread pilotThread;
-    private float[] currReadings;
-    private float STRONG_MOVEMENT = 10.0f;
+    private volatile float[] currReadings,myReadings;
+    private float STRONG_MOVEMENT = 18.0f;
     public volatile int toggle;
     private int batVal;
     private String droneName;
+    private String droneType;
     private final int BTNEMERGENCYLAND = 123;
     private final int BTNAUTOTAKEOFF = 124;
+    private final long FLYTIMEBEFORESTABILIZATION = 10000; //10 seconds before stabilising
     private final int BTNEXIT = 125;
-    public MiniDroneControllerListener(Activity act, Context ctx, ARDeviceController dvc, String droneName){
+    private Thread stabilise;
+
+    public DroneListenerClass(Activity act, Context ctx, ARDeviceController dvc, String droneName, String droneType){
         deviceController=dvc;
         toggle=0;
         context=ctx;
         activity=act;
         this.droneName=droneName;
-
+        this.droneType=droneType;
+        myReadings = new float[4];
+        myReadings[3]=Math.abs(System.currentTimeMillis())%10000000;
         pilotFromSensor();
         initProgress();
     }
@@ -72,10 +80,22 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                     Toast.makeText(context.getApplicationContext(),"Auto Take-off Mode Disabled",Toast.LENGTH_LONG).show();
                     activity.findViewById(BTNAUTOTAKEOFF).setBackgroundResource(R.drawable.auto_hover_disabled);
                 }
-                deviceController.getFeatureMiniDrone().sendPilotingAutoTakeOffMode((byte)toggle);
-
+                autoTakeoff(toggle);
             }
         }
+    }
+
+    public void autoTakeoff(int enabled){
+        switch (droneType){
+            case "minidrone":
+                deviceController.getFeatureMiniDrone().sendPilotingAutoTakeOffMode((byte)enabled);
+                break;
+            default:
+                Log.d("UNSUPOTED","Unsupported");
+                break;
+        }
+
+
     }
     private void pilotFromSensor() {
         pilotThread=new Thread(new Runnable() {
@@ -83,61 +103,102 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
             public void run() {
                 while (!Thread.interrupted()) {
                     if (sensor != null) {
-                        currReadings = sensor.getOrientationRelativeSpeedReadings();
+                        compareReadings();
                         switch (getState()) {
                             case "landed state":
                                 //the only thing you can do when landed is take off
-                                if (currReadings[2] < 0&& Math.abs(currReadings[2])>STRONG_MOVEMENT){
+                                if (Math.abs(myReadings[2])>STRONG_MOVEMENT||Math.abs(myReadings[1])>STRONG_MOVEMENT||Math.abs(myReadings[0])>STRONG_MOVEMENT){
                                     takeOff();
                                 }
                                 break;
                             case "emergency state":
                                 Log.d("Emergency", "Emergency state");
-                                //prompt the user of battery level or that emergency state initiated
-                                break;
-                            case "hovering state":
-                                pilot();
-                                break;
-                            case "flying state":
-                                pilot();
+                                activity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(activity.getApplicationContext(),"Battery for the drone is critical. Please recharge!",Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                                stopThread();
                                 break;
                             default:
                                 toggle=0;
+                                pilot();
                                 break;
                         }
-                        Log.d("State", flyingState + " ");
-                        try {
+                        try{
                             Thread.sleep(THREAD_TIMEOUT);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            e.printStackTrace();
                         }
+                        catch (Exception e){
+                            e.printStackTrace();
+                            Thread.currentThread().interrupt();
+                        }
+                        Log.d("State", flyingState + " ");
                     }
                 }
             }
         });
         pilotThread.start();
     }
+
+    private void compareReadings() {
+        currReadings = sensor.getOrientationRelativeSpeedReadings();
+        boolean updated=false;
+        for (int a=0;a<3;a++)
+            if (currReadings[a]!=myReadings[a]){
+                if (currReadings[a]==0 && Math.abs(System.currentTimeMillis())%10000000-myReadings[3]>FLYTIMEBEFORESTABILIZATION){
+                    myReadings[a]=0;
+                }
+                else{
+                    myReadings[a]=currReadings[a];
+                }
+                updated=true;
+            }
+        if (updated){
+            myReadings[3]= Math.abs(System.currentTimeMillis())%10000000;
+            Log.d("TAG", "compareReadings: "+String.format("%.2f\t%.2f\t%.2f",myReadings[0],myReadings[1],myReadings[2]));
+        }
+
+    }
+
     private void pilot() {
-        float vSpeed = currReadings[2];
-        float hSpeed = currReadings[0];
-        float dSPeed = currReadings[1];
+        float hSpeed = myReadings[2];
+        float vSpeed = myReadings[1];
+        float dSPeed = myReadings[0];
         int timestamp = (int)System.currentTimeMillis();
-        float EMERGENCYLAND = 40;
-        if (vSpeed> EMERGENCYLAND ||hSpeed> EMERGENCYLAND ||hSpeed> EMERGENCYLAND){//land if extreme movement
-            emergencyLand();
+
+        switch (droneType){
+            case "minidrone":
+                deviceController.getFeatureMiniDrone().setPilotingPCMD((byte)1,(byte)hSpeed,(byte)dSPeed,(byte)0,(byte)vSpeed,timestamp);
+                break;
+            default:
+                Log.d("UNSUPORTED DRONE","Add functionality for "+droneType);
+                break;
         }
-        else{
-            deviceController.getFeatureMiniDrone().setPilotingPCMD((byte)1,(byte)(hSpeed*-1),(byte)dSPeed,(byte)0,(byte)vSpeed,timestamp);
-        }
+
     }
 
     private void emergencyLand() {
-        deviceController.getFeatureMiniDrone().sendPilotingEmergency();
+        switch (droneType){
+            case "minidrone":
+                deviceController.getFeatureMiniDrone().sendPilotingEmergency();
+                break;
+            default:
+                Log.d("UNSUPORTED DRONE","Add functionality for "+droneType);
+                break;
+        }
     }
 
     private void takeOff() {
-        deviceController.getFeatureMiniDrone().sendPilotingTakeOff();
+        switch (droneType){
+            case "minidrone":
+                deviceController.getFeatureMiniDrone().sendPilotingTakeOff();
+                break;
+            default:
+                Log.d("UNSUPORTED DRONE","Add functionality for "+droneType);
+                break;
+        }
+
     }
 
     @NonNull
@@ -184,6 +245,7 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                     @Override
                     public void run() {
                         btnConnect.setVisibility(View.GONE); //hide the "connect" button from the screen
+
 
                         //change the text of the header
                         df.setTextSize(18);
@@ -240,6 +302,7 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                                                     @Override
                                                     public void onClick(DialogInterface dialog, int which) {
                                                         //end the current activity and restart
+                                                        stopThread();
                                                         activity.finish();
                                                         activity.startActivity(activity.getBaseContext().getPackageManager().getLaunchIntentForPackage(activity.getBaseContext().getPackageName()).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                                                     }
@@ -272,6 +335,10 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
         //when thread is stopped, the sensor should also release control of the accelerometer and gyroscope
         if (sensor!=null){
             sensor.unregisterListeners();
+        }
+
+        if (stabilise!=null){
+            stabilise.interrupt();
         }
     }
 
@@ -307,6 +374,13 @@ public class MiniDroneControllerListener implements ARDeviceControllerListener{
                     }
 
                     flyingState = ARCOMMANDS_MINIDRONE_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM.getFromValue(state);
+                }
+            }
+            else if (commandKey==ARCONTROLLER_DICTIONARY_KEY_ENUM.ARCONTROLLER_DICTIONARY_KEY_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED){
+                ARControllerArgumentDictionary<Object> args = elementDictionary.get(ARControllerDictionary.ARCONTROLLER_DICTIONARY_SINGLE_KEY);
+                if (args!=null){
+                    Integer state = (Integer) args.get(ARFeatureARDrone3.ARCONTROLLER_DICTIONARY_KEY_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE);
+                    flyingState = ARCOMMANDS_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM.getFromValue(state);
                 }
             }
         }
