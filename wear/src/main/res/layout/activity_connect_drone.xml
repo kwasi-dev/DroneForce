@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.wearable.view.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/watch_view_stub"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".DroneFlyingActivity"
+    tools:deviceIds="wear">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/rl_connect_main"
+        app:layout_box="all">
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_droneName"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:hint="@string/drone_name" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_droneBattery"
+            android:layout_below="@+id/tv_droneName"
+            android:layout_alignParentStart="true"
+            android:hint="@string/drone_battery" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_droneState"
+            android:layout_below="@+id/tv_droneBattery"
+            android:layout_alignParentStart="true"
+            android:hint="@string/drone_state"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_droneAction"
+            android:layout_below="@+id/tv_droneState"
+            android:layout_alignParentStart="true"
+            android:hint="@string/drone_action"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/auto_takeoff"
+            android:textSize="13sp"
+            android:id="@+id/btn_autoTakeoff"
+            android:onClick="autoTakeoff"
+            android:layout_below="@+id/tv_droneAction"
+            android:layout_centerHorizontal="true" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/emergency_land"
+            android:id="@+id/btn_emergencyLand"
+            android:textSize="13sp"
+            android:onClick="emergencyLand"
+            android:layout_below="@+id/btn_autoTakeoff"
+            android:layout_alignStart="@+id/btn_autoTakeoff" />
+    </RelativeLayout>
+</android.support.wearable.view.BoxInsetLayout>

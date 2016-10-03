@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "C:\\Users\\kwasi\\Desktop\\DroneForce\\Ardrone\\controltowerandroid\\build\\intermediates\\res\\merged\\debug\\layout\\activity_main.xml",
+        "source": "C:\\Users\\kwasi\\Desktop\\DroneForce\\Ardrone\\controltowerandroid\\src\\main\\res\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\kwasi\\Desktop\\DroneForce\\Ardrone\\controltowerandroid\\build\\intermediates\\res\\merged\\debug\\layout\\seek_bar_preference.xml",
+        "source": "C:\\Users\\kwasi\\Desktop\\DroneForce\\Ardrone\\controltowerandroid\\src\\main\\res\\layout\\seek_bar_preference.xml"
+    },
+    {
+        "merged": "C:\\Users\\kwasi\\Desktop\\DroneForce\\Ardrone\\controltowerandroid\\build\\intermediates\\res\\merged\\debug\\layout\\ps3_controller_help.xml",
+        "source": "C:\\Users\\kwasi\\Desktop\\DroneForce\\Ardrone\\controltowerandroid\\src\\main\\res\\layout\\ps3_controller_help.xml"
+    }
+]

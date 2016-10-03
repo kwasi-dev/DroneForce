@@ -5,35 +5,15 @@
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.logan20.droneforce.wearMain"
-    tools:deviceIds="wear">
+    tools:context=".WearMainActivity"
+    tools:deviceIds="wear"
+    android:background="#ae7676">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/mainRelLayout">
-
-
-        <RelativeLayout
-            android:orientation="horizontal"
-            android:id="@+id/buttonRelLayout"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:gravity="center_horizontal"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true">
-
-            <Button
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:id="@+id/btnConnect"
-                android:background="@drawable/connect_enabled"
-                android:clickable="true"
-                android:layout_centerHorizontal="true"
-                android:layout_alignParentTop="true"
-                android:onClick="setUp"/>
-
-        </RelativeLayout>
+        android:id="@+id/mainRelLayout"
+        app:layout_box="all">
 
         <TextView
             android:id="@+id/tv_mainTxt"
@@ -41,11 +21,18 @@
             android:layout_height="wrap_content"
             android:text="@string/welcome"
             android:paddingBottom="20dp"
-            android:textSize="25sp"
+            android:textSize="18sp"
             app:layout_box="all"
-            android:layout_above="@+id/buttonRelLayout"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="35dp" />
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/lv_main_menu"
+            android:layout_below="@+id/tv_mainTxt"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true" />
 
     </RelativeLayout>
 </android.support.wearable.view.BoxInsetLayout>

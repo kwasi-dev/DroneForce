@@ -5,13 +5,29 @@
     <uses-feature android:name="android.hardware.type.watch" />
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission
+        android:name="android.permission.ACCESS_WIFI_STATE"
+        android:required="true" />
+    <uses-permission
+        android:name="android.permission.CHANGE_WIFI_STATE"
+        android:required="true" />
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        android:required="true" />
+    <uses-permission
+        android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"
+        android:required="true" />
 
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
-    <uses-feature android:name="android.hardware.wifi" android:required="true"/>
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -24,9 +40,26 @@
             android:required="false" />
 
         <activity
-            android:name=".wearMain"
+            android:name=".WearMainActivity"
             android:label="@string/app_name"
             android:theme="@android:style/Theme.DeviceDefault.Light">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".SensorReadingActivity"
+            android:label="@string/title_activity_sensor_reading"
+            android:theme="@android:style/Theme.DeviceDefault.Light" />
+        <activity
+            android:name=".DroneFlyingActivity"
+            android:label="@string/title_activity_connect_drone"
+            android:theme="@android:style/Theme.DeviceDefault.Light" />
+        <activity
+            android:name=".ArConnectActivity"
+            android:label="@string/title_activity_ar_connect">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
